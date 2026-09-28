@@ -1,0 +1,2795 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Векторный конструктор шрифтов · TTF · Мета-редактор</title>
+<script src="https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0d1117;
+    font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+    color: #e6edf3;
+    min-height: 100vh;
+    padding: 16px;
+  }
+  .app {
+    max-width: 1700px;
+    margin: 0 auto;
+    background: #161b22;
+    border-radius: 24px;
+    border: 1px solid #30363d;
+    padding: 20px 24px 28px;
+  }
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+  }
+  h1 .badge {
+    background: #238636;
+    font-size: 0.72rem;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+  h1 .badge.jp { background: #da3633; }
+  h1 .badge.lib { background: #8957e5; }
+  h1 .badge.meta { background: #d29922; }
+  .subhead {
+    color: #8b949e;
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+    border-left: 3px solid #58a6ff;
+    padding-left: 12px;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 340px 1fr 300px;
+    gap: 20px;
+    align-items: start;
+  }
+  @media (max-width: 1300px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 16px;
+    padding: 14px;
+  }
+  .panel h2 {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #8b949e;
+    margin-bottom: 10px;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .panel h2 .progress { color: #58a6ff; font-size: 0.85rem; }
+
+  .library-selector {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .library-selector select {
+    flex: 1;
+    background: #21262d;
+    border: 1px solid #30363d;
+    color: #e6edf3;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    outline: none;
+    min-width: 0;
+  }
+  .library-selector select:focus { border-color: #58a6ff; }
+  .library-selector .btn-icon {
+    background: #21262d;
+    border: 1px solid #30363d;
+    color: #c9d1d9;
+    width: 34px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .library-selector .btn-icon:hover {
+    background: #30363d;
+    color: white;
+    border-color: #58a6ff;
+  }
+
+  .lib-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+  .lib-actions .btn { flex: 1; justify-content: center; min-width: 80px; }
+
+  .search-box {
+    width: 100%;
+    background: #21262d;
+    border: 1px solid #30363d;
+    color: #e6edf3;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    outline: none;
+    margin-bottom: 10px;
+  }
+  .search-box:focus { border-color: #58a6ff; }
+  .search-box::placeholder { color: #6e7681; }
+
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    max-height: 100px;
+    overflow-y: auto;
+  }
+  .tabs::-webkit-scrollbar { width: 4px; }
+  .tabs::-webkit-scrollbar-thumb { background: #30363d; border-radius: 2px; }
+  .tab {
+    background: #21262d;
+    border: 1px solid #30363d;
+    color: #8b949e;
+    padding: 4px 9px;
+    border-radius: 8px;
+    font-size: 0.72rem;
+    cursor: pointer;
+    transition: 0.15s;
+    white-space: nowrap;
+  }
+  .tab:hover { background: #30363d; color: #e6edf3; }
+  .tab.active {
+    background: #1f6feb;
+    border-color: #1f6feb;
+    color: white;
+  }
+  .tab .count {
+    opacity: 0.7;
+    font-size: 0.65rem;
+    margin-left: 3px;
+  }
+
+  .grid-tools {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .grid-tools .btn.small { flex-shrink: 0; }
+  .grid-info {
+    font-size: 0.7rem;
+    color: #6e7681;
+    margin-left: auto;
+  }
+
+  .glyph-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 4px;
+    max-height: 420px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+  .glyph-grid::-webkit-scrollbar { width: 6px; }
+  .glyph-grid::-webkit-scrollbar-thumb {
+    background: #30363d;
+    border-radius: 3px;
+  }
+
+  .glyph-btn {
+    aspect-ratio: 1;
+    background: #21262d;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    color: #c9d1d9;
+    cursor: pointer;
+    transition: 0.1s;
+    padding: 0;
+    line-height: 1;
+    font-family: 'Noto Sans JP', 'Segoe UI', sans-serif;
+    position: relative;
+  }
+  .glyph-btn:hover {
+    background: #30363d;
+    border-color: #58a6ff;
+    color: white;
+  }
+  .glyph-btn.active {
+    background: #1f6feb;
+    border-color: #58a6ff;
+    color: white;
+  }
+  .glyph-btn.drawn {
+    box-shadow: inset 0 0 0 2px #238636;
+  }
+  .glyph-btn.marked-for-remove {
+    background: #4a1e1e !important;
+    border-color: #da3633 !important;
+    color: #ff8080 !important;
+  }
+  .glyph-btn.marked-for-remove::after {
+    content: '✕';
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: #da3633;
+    color: white;
+    font-size: 0.6rem;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+
+  .remove-actions {
+    display: none;
+    gap: 6px;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: #2d1517;
+    border: 1px solid #5a1e1e;
+    border-radius: 10px;
+    font-size: 0.8rem;
+    color: #f0a0a0;
+  }
+  .remove-actions.show { display: flex; }
+
+  .canvas-area {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .canvas-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 12px;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .current-glyph {
+    background: #161b22;
+    border: 1px solid #30363d;
+    padding: 6px 16px;
+    border-radius: 30px;
+    font-family: 'Noto Sans JP', monospace;
+    font-size: 1.1rem;
+  }
+  .current-glyph strong {
+    color: #58a6ff;
+    font-size: 1.4rem;
+    margin-left: 6px;
+  }
+
+  .toolbar {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .btn {
+    background: #21262d;
+    border: 1px solid #30363d;
+    color: #c9d1d9;
+    padding: 7px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: inherit;
+  }
+  .btn:hover { background: #30363d; color: white; }
+  .btn.primary {
+    background: #238636;
+    border-color: #238636;
+    color: white;
+  }
+  .btn.primary:hover { background: #2ea043; }
+  .btn.purple {
+    background: #8957e5;
+    border-color: #8957e5;
+    color: white;
+  }
+  .btn.purple:hover { background: #9a6df0; }
+  .btn.orange {
+    background: #d29922;
+    border-color: #d29922;
+    color: #0d1117;
+  }
+  .btn.orange:hover { background: #e3b341; }
+  .btn.danger {
+    background: #2d1517;
+    border-color: #5a1e1e;
+    color: #f0a0a0;
+  }
+  .btn.danger:hover { background: #4a1e1e; }
+  .btn.active {
+    background: #1f6feb;
+    border-color: #58a6ff;
+    color: white;
+  }
+  .btn.small { padding: 4px 9px; font-size: 0.75rem; }
+
+  .mode-switch {
+    display: flex;
+    gap: 4px;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 10px;
+    padding: 3px;
+  }
+  .mode-switch button {
+    background: transparent;
+    border: none;
+    color: #8b949e;
+    padding: 5px 12px;
+    border-radius: 7px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: 0.15s;
+    font-family: inherit;
+  }
+  .mode-switch button:hover { color: #e6edf3; }
+  .mode-switch button.active {
+    background: #1f6feb;
+    color: white;
+  }
+
+  .canvas-wrap {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    aspect-ratio: 1;
+  }
+  canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background: #010409;
+    border-radius: 12px;
+    box-shadow: inset 0 0 0 1px #30363d;
+    cursor: crosshair;
+    touch-action: none;
+  }
+  canvas.point-mode { cursor: default; }
+  #guideCanvas {
+    pointer-events: none;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .hint {
+    font-size: 0.75rem;
+    color: #6e7681;
+    margin-top: 10px;
+    text-align: center;
+    line-height: 1.6;
+  }
+  .hint kbd {
+    background: #21262d;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-size: 0.7rem;
+  }
+
+  .metrics label {
+    display: block;
+    font-size: 0.75rem;
+    color: #8b949e;
+    margin-bottom: 4px;
+    margin-top: 10px;
+  }
+  .metrics input[type="range"] {
+    width: 100%;
+    accent-color: #58a6ff;
+  }
+  .metrics .value {
+    color: #58a6ff;
+    font-weight: 600;
+    font-size: 0.8rem;
+  }
+
+  .preview-section {
+    margin-top: 20px;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 16px;
+    padding: 16px;
+  }
+  .preview-section h3 {
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #8b949e;
+    margin-bottom: 10px;
+  }
+  .preview-box {
+    width: 100%;
+    min-height: 120px;
+    background: #010409;
+    border: 1px solid #30363d;
+    border-radius: 12px;
+    padding: 16px;
+    font-size: 2.4rem;
+    line-height: 1.4;
+    color: #e6edf3;
+    outline: none;
+    font-family: 'Noto Sans JP', monospace;
+    word-break: break-word;
+    letter-spacing: 0.05em;
+  }
+  .preview-box:focus { border-color: #58a6ff; }
+  .preview-note {
+    font-size: 0.75rem;
+    color: #6e7681;
+    margin-top: 8px;
+  }
+
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 16px;
+    padding: 24px;
+    max-width: 560px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .modal h3 {
+    margin-bottom: 14px;
+    font-size: 1.1rem;
+  }
+  .modal p.desc {
+    color: #8b949e;
+    font-size: 0.85rem;
+    margin-bottom: 14px;
+    line-height: 1.5;
+  }
+  .modal input[type="text"],
+  .modal input[type="url"],
+  .modal textarea,
+  .modal select {
+    width: 100%;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    color: #e6edf3;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    outline: none;
+    font-family: inherit;
+    resize: vertical;
+  }
+  .modal input:focus,
+  .modal textarea:focus,
+  .modal select:focus { border-color: #58a6ff; }
+  .modal textarea { min-height: 120px; font-size: 0.9rem; }
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+  .modal .form-row {
+    margin-bottom: 12px;
+  }
+  .modal .form-row label {
+    display: block;
+    font-size: 0.8rem;
+    color: #8b949e;
+    margin-bottom: 6px;
+  }
+  .modal .char-input {
+    font-size: 1.8rem;
+    text-align: center;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+  .modal .checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: #c9d1d9;
+    margin-bottom: 10px;
+  }
+  .modal .checkbox-row input { accent-color: #58a6ff; }
+
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: #238636;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 30px;
+    font-size: 0.9rem;
+    transition: transform 0.3s;
+    z-index: 200;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    max-width: 90%;
+    text-align: center;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.error { background: #da3633; }
+
+  .loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 300;
+    color: white;
+    font-size: 1.1rem;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .loading-overlay.show { display: flex; }
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #30363d;
+    border-top-color: #58a6ff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .kbd-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .mini-btn {
+    background: #21262d;
+    border: 1px solid #30363d;
+    color: #8b949e;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: 0.15s;
+    font-family: inherit;
+  }
+  .mini-btn:hover {
+    background: #30363d;
+    color: white;
+    border-color: #58a6ff;
+  }
+  .empty-note {
+    text-align: center;
+    color: #6e7681;
+    font-size: 0.85rem;
+    padding: 20px 10px;
+    grid-column: 1 / -1;
+  }
+
+  .meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  @media (max-width: 600px) {
+    .meta-grid { grid-template-columns: 1fr; }
+  }
+  .meta-preview {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.78rem;
+    color: #8b949e;
+    margin-top: 12px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .meta-preview strong { color: #58a6ff; }
+
+  .point-tools {
+    display: none;
+    gap: 4px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+    padding: 10px;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 10px;
+    width: 100%;
+    max-width: 480px;
+    align-items: center;
+  }
+  .point-tools.show { display: flex; }
+  .point-tools .divider {
+    width: 1px;
+    height: 20px;
+    background: #30363d;
+    margin: 0 2px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>
+    ✒️ Векторный конструктор шрифтов
+    <span class="badge">TTF</span>
+    <span class="badge jp">日本語</span>
+    <span class="badge lib">Библиотеки</span>
+    <span class="badge meta">Мета</span>
+  </h1>
+  <div class="subhead">Латиница · Кириллица · Хирагана · Катакана · Редактор точек · Метаданные TTF · Свои библиотеки</div>
+
+  <div class="layout">
+    <div class="panel">
+      <h2>Библиотека символов <span class="progress" id="progressText">0</span></h2>
+
+      <div class="library-selector">
+        <select id="librarySelect"></select>
+        <button class="btn-icon" id="importLibBtn" title="Импортировать библиотеку">📁</button>
+        <button class="btn-icon" id="exportLibBtn" title="Экспортировать библиотеку">💾</button>
+      </div>
+
+      <div class="lib-actions">
+        <button class="btn small" id="newLibBtn">＋ Новая</button>
+        <button class="btn small" id="renameLibBtn">✎ Имя</button>
+        <button class="btn small" id="dupLibBtn">⧉ Дубль</button>
+        <button class="btn small" id="mergeLibBtn">⊕ Слить</button>
+        <button class="btn small danger" id="deleteLibBtn">✕ Удалить</button>
+      </div>
+
+      <input type="text" class="search-box" id="searchBox" placeholder="🔍 Поиск символа...">
+
+      <div class="tabs" id="tabs"></div>
+
+      <div class="grid-tools">
+        <button class="btn small" id="removeModeBtn" title="Режим удаления символов">✕ Удалить</button>
+        <span class="grid-info" id="gridInfo"></span>
+      </div>
+
+      <div class="glyph-grid" id="glyphGrid"></div>
+
+      <div class="remove-actions" id="removeActions">
+        <span id="selectedCount">Выбрано: 0</span>
+        <div style="display:flex;gap:6px;">
+          <button class="btn small" id="cancelRemoveBtn">Отмена</button>
+          <button class="btn small danger" id="confirmRemoveBtn">Удалить выбранные</button>
+        </div>
+      </div>
+
+      <button class="btn purple" id="addCustomBtn" style="width:100%;margin-top:12px;justify-content:center">＋ Добавить символы списком</button>
+    </div>
+
+    <div class="canvas-area">
+      <div class="canvas-header">
+        <div class="current-glyph">
+          Символ: <strong id="currentGlyphDisplay">A</strong>
+        </div>
+        <div class="toolbar">
+          <div class="mode-switch" id="modeSwitch">
+            <button data-mode="draw" class="active">✏ Рисовать</button>
+            <button data-mode="points">◉ Точки</button>
+          </div>
+          <button class="btn" id="undoBtn" title="Отменить (Ctrl+Z)">↶</button>
+          <button class="btn" id="redoBtn" title="Вернуть (Ctrl+Y)">↷</button>
+          <button class="btn" id="clearBtn">🗑</button>
+          <button class="btn orange" id="metaBtn">⚙ Мета</button>
+          <button class="btn primary" id="downloadBtn">⬇ TTF</button>
+        </div>
+      </div>
+
+      <div class="canvas-wrap">
+        <canvas id="glyphCanvas" width="1000" height="1000"></canvas>
+        <canvas id="guideCanvas" width="1000" height="1000"></canvas>
+      </div>
+
+      <div class="point-tools" id="pointTools">
+        <button class="btn small" id="ptDeselect">Отмена</button>
+        <div class="divider"></div>
+        <button class="btn small" id="ptDelete" title="Удалить выбранные точки">🗑 Точки</button>
+        <button class="btn small" id="ptMirrorH" title="Отразить по горизонтали">↔ H</button>
+        <button class="btn small" id="ptMirrorV" title="Отразить по вертикали">↕ V</button>
+        <button class="btn small" id="ptRotate90" title="Повернуть на 90°">⟳ 90°</button>
+        <div class="divider"></div>
+        <button class="btn small" id="ptSmooth" title="Сгладить">〜 Сгладить</button>
+        <button class="btn small" id="ptThicker" title="Толще">＋</button>
+        <button class="btn small" id="ptThinner" title="Тоньше">－</button>
+        <div class="divider"></div>
+        <button class="btn small" id="ptCopyGlyph" title="Копировать глиф">⧉ Копир.</button>
+        <button class="btn small" id="ptPasteGlyph" title="Вставить глиф">📋 Вставить</button>
+      </div>
+
+      <div class="hint" id="hintDraw">
+        <kbd>Клик</kbd> — точка · <kbd>Тяни</kbd> — линия · <kbd>ПКМ</kbd> по линии — удалить · <kbd>Ctrl+Z</kbd>/<kbd>Ctrl+Y</kbd> — отмена/возврат<br>
+        <span style="color:#f85149">красная</span> — baseline · <span style="color:#58a6ff">синяя</span> — x-height · <span style="color:#3fb950">зелёная</span> — cap-height
+      </div>
+      <div class="hint" id="hintPoints" style="display:none">
+        <kbd>Клик</kbd> по узлу — выделить · <kbd>Shift+клик</kbd> — несколько · <kbd>Тяни</kbd> — переместить · <kbd>ПКМ</kbd> по узлу — удалить<br>
+        <kbd>Пробел</kbd> — смена режима · <kbd>Ctrl+C</kbd>/<kbd>Ctrl+V</kbd> — копировать/вставить глиф
+      </div>
+    </div>
+
+    <div class="panel metrics">
+      <h2>Метрики глифа</h2>
+      <label>Advance width: <span class="value" id="widthVal">600</span></label>
+      <input type="range" id="widthRange" min="200" max="1200" value="600">
+
+      <label>Left bearing: <span class="value" id="lsbVal">50</span></label>
+      <input type="range" id="lsbRange" min="0" max="400" value="50">
+
+      <label>Right bearing: <span class="value" id="rsbVal">50</span></label>
+      <input type="range" id="rsbRange" min="0" max="400" value="50">
+
+      <hr style="border:none;border-top:1px solid #30363d;margin:16px 0">
+
+      <h2>Кисть и сетка</h2>
+      <label>Толщина: <span class="value" id="brushVal">8</span> px</label>
+      <input type="range" id="brushRange" min="2" max="40" value="8">
+
+      <label>Прилипание: <span class="value" id="snapVal">выкл</span></label>
+      <input type="range" id="snapRange" min="0" max="50" value="0">
+
+      <hr style="border:none;border-top:1px solid #30363d;margin:16px 0">
+
+      <h2>Быстрые действия</h2>
+      <div class="kbd-row">
+        <button class="mini-btn" data-quick=" ">Пробел</button>
+        <button class="mini-btn" data-quick="-">Дефис</button>
+        <button class="mini-btn" data-quick=".">Точка</button>
+        <button class="mini-btn" data-quick=",">Запятая</button>
+      </div>
+      <button class="btn danger" id="clearAllBtn" style="width:100%;margin-top:16px;justify-content:center">⟲ Сбросить библиотеку</button>
+    </div>
+  </div>
+
+  <div class="preview-section">
+    <h3>🔤 Предпросмотр</h3>
+    <div class="preview-box" id="previewBox" contenteditable="true" spellcheck="false">Привет! Hello! 123 こんにちは カタカナ</div>
+    <div class="preview-note">Введите текст. Нарисованные глифы подставятся автоматически.</div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <h3>Добавить символы</h3>
+    <p class="desc">Введите символы подряд — каждый станет отдельным глифом.</p>
+    <div class="form-row">
+      <label>Символы</label>
+      <textarea id="customCharsInput" placeholder="Например: ★☆♥♦♠♣" style="min-height:80px"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="cancelAddBtn">Отмена</button>
+      <button class="btn primary" id="confirmAddBtn">Добавить</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="newLibModal">
+  <div class="modal">
+    <h3 id="newLibTitle">Новая библиотека</h3>
+    <p class="desc" id="newLibDesc">Создайте пустую библиотеку символов.</p>
+    <div class="form-row">
+      <label>Название</label>
+      <input type="text" id="newLibName" placeholder="Мой набор">
+    </div>
+    <div class="form-row" id="newLibCharsRow">
+      <label>Начальные символы (опционально)</label>
+      <textarea id="newLibChars" placeholder="ABC★☆♥" style="min-height:80px"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="cancelNewLib">Отмена</button>
+      <button class="btn primary" id="confirmNewLib">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="importModal">
+  <div class="modal">
+    <h3>Импорт библиотеки</h3>
+    <p class="desc">Вставьте JSON или загрузите файл.</p>
+    <div class="form-row">
+      <label>JSON библиотеки</label>
+      <textarea id="importJson" placeholder='{"name":"Моя","chars":["A","B"]}' style="min-height:120px"></textarea>
+    </div>
+    <div class="form-row">
+      <label>…или файл .json</label>
+      <input type="file" id="importFile" accept=".json" style="color:#8b949e">
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="cancelImport">Отмена</button>
+      <button class="btn primary" id="confirmImport">Импортировать</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="mergeModal">
+  <div class="modal">
+    <h3>Слияние библиотек</h3>
+    <p class="desc">Символы из выбранной библиотеки будут добавлены в текущую.</p>
+    <div class="form-row">
+      <label>Источник</label>
+      <select id="mergeSource"></select>
+    </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="mergeGlyphs" checked>
+      <label for="mergeGlyphs">Копировать нарисованные глифы</label>
+    </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="mergeOverwrite">
+      <label for="mergeOverwrite">Перезаписывать существующие глифы</label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="cancelMerge">Отмена</button>
+      <button class="btn primary" id="confirmMerge">Слить</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="metaModal">
+  <div class="modal">
+    <h3>⚙ Метаданные шрифта</h3>
+    <p class="desc">Эти данные попадут в TTF-файл и будут видны в Word, Figma, Photoshop.</p>
+    <div class="meta-grid">
+      <div class="form-row">
+        <label>Family name *</label>
+        <input type="text" id="metaFamily" placeholder="MyFont">
+      </div>
+      <div class="form-row">
+        <label>Style name</label>
+        <input type="text" id="metaStyle" placeholder="Regular">
+      </div>
+      <div class="form-row">
+        <label>Version</label>
+        <input type="text" id="metaVersion" placeholder="1.0">
+      </div>
+      <div class="form-row">
+        <label>Designer</label>
+        <input type="text" id="metaDesigner" placeholder="Иван Иванов">
+      </div>
+      <div class="form-row">
+        <label>License</label>
+        <select id="metaLicense">
+          <option value="">— не указана —</option>
+          <option value="OFL">SIL Open Font License 1.1</option>
+          <option value="CC0">CC0 (public domain)</option>
+          <option value="CC-BY">CC BY</option>
+          <option value="MIT">MIT</option>
+          <option value="PROPRIETARY">Proprietary</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>URL</label>
+        <input type="url" id="metaURL" placeholder="https://example.com">
+      </div>
+    </div>
+    <div class="form-row">
+      <label>Описание</label>
+      <textarea id="metaDescription" placeholder="Краткое описание" style="min-height:70px"></textarea>
+    </div>
+    <div class="form-row">
+      <label>Copyright</label>
+      <input type="text" id="metaCopyright" placeholder="© 2025 Автор">
+    </div>
+    <div class="form-row">
+      <label>Trademark</label>
+      <input type="text" id="metaTrademark" placeholder="MyFont™">
+    </div>
+    <div class="meta-preview" id="metaPreview"></div>
+    <div class="modal-actions">
+      <button class="btn" id="cancelMeta">Отмена</button>
+      <button class="btn danger" id="resetMeta">Сбросить</button>
+      <button class="btn primary" id="confirmMeta">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div>Генерирую TTF-шрифт...</div>
+</div>
+
+<script>
+/* ============================================================
+   КОНСТАНТЫ
+   ============================================================ */
+const CANVAS_W = 1000;
+const CANVAS_H = 1000;
+const UPM = 1000;
+const BASELINE_Y = 800;
+const CAP_HEIGHT_Y = 200;
+const X_HEIGHT_Y = 350;
+const ASCENDER_Y = 100;
+const DESCENDER_Y = 900;
+const STORAGE_KEY = 'font-constructor-v2';
+
+/* ============================================================
+   ВСТРОЕННЫЕ НАБОРЫ
+   ============================================================ */
+const HIRAGANA = (
+  'あいうえおかきくけこがぎぐげごさしすせそざじずぜぞ' +
+  'たちつてとだぢづでどなにぬねのはひふへほばびぶべぼぱぴぷぺぽ' +
+  'まみむめもやゆよらりるれろわをん' +
+  'ぁぃぅぇぉゃゅょっゔー'
+).split('');
+
+const KATAKANA = (
+  'アイウエオカキクケコガギグゲゴサシスセソザジズゼゾ' +
+  'タチツテトダヂヅデドナニヌネノハヒフヘホバビブベボパピプペポ' +
+  'マミムメモヤユヨラリルレロワヲン' +
+  'ァィゥェォャュョッヴー'
+).split('');
+
+const BUILTIN_SETS = {
+  'Латиница A-Z': 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
+  'Латиница a-z': 'abcdefghijklmnopqrstuvwxyz'.split(''),
+  'Кириллица А-Я': 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ'.split(''),
+  'Кириллица а-я': 'абвгдеёжзийклмнопрстуфхцчшщъыьэюя'.split(''),
+  'Цифры': '0123456789'.split(''),
+  'Пунктуация': '.,!?;:\'"()[]{}«»—–-+*/=@#$%&№§¶'.split(''),
+  'Хирагана': HIRAGANA,
+  'Катакана': KATAKANA
+};
+
+/* ============================================================
+   СОСТОЯНИЕ
+   ============================================================ */
+let libraries = {};
+let currentLibName = '';
+
+let currentChar = 'A';
+let currentStrokes = [];
+let undoStack = [];
+let redoStack = [];
+let brushWidth = 8;
+let snapSize = 0;
+let isDrawing = false;
+let currentStroke = null;
+let hoveredStrokeIdx = -1;
+let currentTab = 'Латиница A-Z';
+let editMode = 'draw';
+let selectedPoints = [];
+let isDraggingPoint = false;
+let dragStartPositions = [];
+let copiedGlyph = null;
+let removeMode = false;
+let markedForRemoval = new Set();
+
+const canvas = document.getElementById('glyphCanvas');
+const ctx = canvas.getContext('2d');
+const guideCanvas = document.getElementById('guideCanvas');
+const gctx = guideCanvas.getContext('2d');
+
+/* ============================================================
+   РАБОТА С БИБЛИОТЕКАМИ
+   ============================================================ */
+function getCurrentLib() { return libraries[currentLibName]; }
+
+function getGlyph(ch) {
+  const lib = getCurrentLib();
+  if (!lib) return null;
+  return lib.glyphs[ch] || null;
+}
+
+function ensureGlyph(ch) {
+  const lib = getCurrentLib();
+  if (!lib) return null;
+  if (!lib.glyphs[ch]) {
+    lib.glyphs[ch] = { strokes: [], width: 600, lsb: 50, rsb: 50 };
+  }
+  return lib.glyphs[ch];
+}
+
+function getDefaultMeta() {
+  return {
+    family: '', style: 'Regular', version: '1.0', designer: '',
+    license: '', url: '', description: '', copyright: '', trademark: ''
+  };
+}
+
+function buildDefaultLibrary() {
+  const allChars = [];
+  Object.values(BUILTIN_SETS).forEach(set => {
+    set.forEach(ch => {
+      if (!allChars.includes(ch)) allChars.push(ch);
+    });
+  });
+  return {
+    name: 'Основная', chars: allChars, customChars: [],
+    glyphs: {}, meta: getDefaultMeta()
+  };
+}
+
+function saveToStorage() {
+  try {
+    const data = { libraries, currentLibName, brushWidth, snapSize };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (e) {
+    console.warn('save error:', e);
+  }
+}
+
+function loadFromStorage() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+    if (!data.libraries || !data.currentLibName) return false;
+    libraries = data.libraries;
+    currentLibName = data.currentLibName;
+    if (data.brushWidth) brushWidth = data.brushWidth;
+    if (typeof data.snapSize === 'number') snapSize = data.snapSize;
+    Object.values(libraries).forEach(lib => {
+      if (!lib.meta) lib.meta = getDefaultMeta();
+      if (!lib.customChars) lib.customChars = [];
+    });
+    return true;
+  } catch (e) {
+    console.warn('load error:', e);
+    return false;
+  }
+}
+
+function refreshLibrarySelect() {
+  const sel = document.getElementById('librarySelect');
+  sel.innerHTML = '';
+  Object.keys(libraries).forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    if (name === currentLibName) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+/* ============================================================
+   ВКЛАДКИ И СЕТКА
+   ============================================================ */
+function buildTabs() {
+  const tabsEl = document.getElementById('tabs');
+  tabsEl.innerHTML = '';
+  const lib = getCurrentLib();
+  if (!lib) return;
+
+  Object.keys(BUILTIN_SETS).forEach(name => {
+    const count = BUILTIN_SETS[name].filter(ch => lib.chars.includes(ch)).length;
+    if (count === 0) return;
+    const t = document.createElement('button');
+    t.className = 'tab' + (name === currentTab ? ' active' : '');
+    t.innerHTML = name + '<span class="count">' + count + '</span>';
+    t.dataset.tab = name;
+    t.addEventListener('click', () => {
+      currentTab = name;
+      removeMode = false;
+      markedForRemoval.clear();
+      document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+      buildGlyphGrid(name);
+    });
+    tabsEl.appendChild(t);
+  });
+
+  const customCount = lib.customChars.length;
+  const t = document.createElement('button');
+  t.className = 'tab' + (currentTab === 'Свои' ? ' active' : '');
+  t.innerHTML = 'Свои<span class="count">' + customCount + '</span>';
+  t.dataset.tab = 'Свои';
+  t.addEventListener('click', () => {
+    currentTab = 'Свои';
+    removeMode = false;
+    markedForRemoval.clear();
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    buildGlyphGrid('Свои');
+  });
+  tabsEl.appendChild(t);
+}
+
+function buildGlyphGrid(tabName) {
+  const grid = document.getElementById('glyphGrid');
+  grid.innerHTML = '';
+  const lib = getCurrentLib();
+  if (!lib) return;
+
+  let chars;
+  if (tabName === 'Свои') {
+    chars = lib.customChars;
+  } else {
+    const base = BUILTIN_SETS[tabName] || [];
+    chars = base.filter(ch => lib.chars.includes(ch));
+  }
+
+  const search = (document.getElementById('searchBox').value || '').trim();
+  if (search) chars = chars.filter(ch => ch === search || ch.includes(search));
+
+  const info = document.getElementById('gridInfo');
+  if (info) {
+    const total = tabName === 'Свои'
+      ? lib.customChars.length
+      : (BUILTIN_SETS[tabName] || []).filter(ch => lib.chars.includes(ch)).length;
+    info.textContent = chars.length + ' / ' + total;
+  }
+
+  if (chars.length === 0) {
+    const note = document.createElement('div');
+    note.className = 'empty-note';
+    note.textContent = tabName === 'Свои'
+      ? 'Нет своих символов. Нажмите «Добавить символы списком».'
+      : 'Нет символов в этой вкладке.';
+    grid.appendChild(note);
+    return;
+  }
+
+  chars.forEach(ch => {
+    const btn = document.createElement('button');
+    btn.className = 'glyph-btn';
+    btn.textContent = ch;
+    btn.dataset.char = ch;
+    if (ch === currentChar) btn.classList.add('active');
+    const g = getGlyph(ch);
+    if (g && g.strokes.length > 0) btn.classList.add('drawn');
+    if (removeMode && markedForRemoval.has(ch)) {
+      btn.classList.add('marked-for-remove');
+    }
+
+    btn.addEventListener('click', () => {
+      if (removeMode) toggleMarkForRemoval(ch);
+      else selectGlyph(ch);
+    });
+
+    btn.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      if (tabName !== 'Свои') {
+        showToast('Удалять можно только символы из вкладки «Свои»', true);
+        return;
+      }
+      quickRemoveChar(ch);
+    });
+
+    grid.appendChild(btn);
+  });
+}
+
+function refreshGrid() {
+  buildTabs();
+  buildGlyphGrid(currentTab);
+  updateProgress();
+}
+
+function updateProgress() {
+  const lib = getCurrentLib();
+  if (!lib) return;
+  const drawn = Object.keys(lib.glyphs).filter(c => lib.glyphs[c].strokes.length > 0).length;
+  document.getElementById('progressText').textContent = drawn;
+}
+
+/* ============================================================
+   УДАЛЕНИЕ СИМВОЛОВ ИЗ «СВОИ»
+   ============================================================ */
+function toggleMarkForRemoval(ch) {
+  if (markedForRemoval.has(ch)) markedForRemoval.delete(ch);
+  else markedForRemoval.add(ch);
+  document.querySelectorAll('.glyph-btn').forEach(btn => {
+    if (btn.dataset.char === ch) {
+      btn.classList.toggle('marked-for-remove', markedForRemoval.has(ch));
+    }
+  });
+  document.getElementById('selectedCount').textContent = 'Выбрано: ' + markedForRemoval.size;
+}
+
+function quickRemoveChar(ch) {
+  const lib = getCurrentLib();
+  if (!lib) return;
+  if (!confirm('Удалить символ «' + ch + '» из библиотеки?')) return;
+
+  const ci = lib.customChars.indexOf(ch);
+  if (ci >= 0) lib.customChars.splice(ci, 1);
+
+  const inBuiltin = Object.values(BUILTIN_SETS).some(set => set.includes(ch));
+  if (!inBuiltin) {
+    const i = lib.chars.indexOf(ch);
+    if (i >= 0) lib.chars.splice(i, 1);
+  }
+
+  delete lib.glyphs[ch];
+
+  if (currentChar === ch) {
+    const fallback = lib.customChars[0] || lib.chars[0] || 'A';
+    currentChar = fallback;
+    document.getElementById('currentGlyphDisplay').textContent = fallback;
+    loadGlyph(fallback);
+  }
+
+  refreshGrid();
+  redraw();
+  renderPreview();
+  saveToStorage();
+  showToast('Символ «' + ch + '» удалён');
+}
+
+/* ============================================================
+   РАБОТА С ГЛИФОМ
+   ============================================================ */
+function saveCurrentGlyph() {
+  if (!currentChar) return;
+  const g = ensureGlyph(currentChar);
+  g.strokes = JSON.parse(JSON.stringify(currentStrokes));
+}
+
+function loadGlyph(ch) {
+  const g = ensureGlyph(ch);
+  currentStrokes = JSON.parse(JSON.stringify(g.strokes));
+  undoStack = [];
+  redoStack = [];
+  selectedPoints = [];
+  document.getElementById('widthRange').value = g.width;
+  document.getElementById('widthVal').textContent = g.width;
+  document.getElementById('lsbRange').value = g.lsb;
+  document.getElementById('lsbVal').textContent = g.lsb;
+  document.getElementById('rsbRange').value = g.rsb;
+  document.getElementById('rsbVal').textContent = g.rsb;
+}
+
+function selectGlyph(ch) {
+  saveCurrentGlyph();
+  currentChar = ch;
+  document.getElementById('currentGlyphDisplay').textContent = ch;
+  loadGlyph(ch);
+  redraw();
+  document.querySelectorAll('.glyph-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.char === ch);
+  });
+  saveToStorage();
+}
+
+/* ============================================================
+   UNDO / REDO
+   ============================================================ */
+function pushUndo() {
+  undoStack.push(JSON.parse(JSON.stringify(currentStrokes)));
+  if (undoStack.length > 80) undoStack.shift();
+  redoStack = [];
+}
+
+function undo() {
+  if (undoStack.length === 0) return;
+  redoStack.push(JSON.parse(JSON.stringify(currentStrokes)));
+  currentStrokes = undoStack.pop();
+  saveCurrentGlyph();
+  redraw();
+  refreshGrid();
+  renderPreview();
+  saveToStorage();
+}
+
+function redo() {
+  if (redoStack.length === 0) return;
+  undoStack.push(JSON.parse(JSON.stringify(currentStrokes)));
+  currentStrokes = redoStack.pop();
+  saveCurrentGlyph();
+  redraw();
+  refreshGrid();
+  renderPreview();
+  saveToStorage();
+}
+
+/* ============================================================
+   ОТРИСОВКА
+   ============================================================ */
+function redraw() {
+  ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+
+  currentStrokes.forEach((stroke, idx) => {
+    const isHover = idx === hoveredStrokeIdx;
+    const w = stroke.width || brushWidth;
+    const color = isHover ? '#ff6b6b' : '#ffffff';
+
+    if (stroke.points.length === 1) {
+      ctx.beginPath();
+      ctx.arc(stroke.points[0].x, stroke.points[0].y, w / 2, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+    } else {
+      ctx.beginPath();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = w;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+      for (let i = 1; i < stroke.points.length; i++) {
+        ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
+      }
+      ctx.stroke();
+    }
+
+    if (editMode === 'points') {
+      stroke.points.forEach((p, pIdx) => {
+        const isSel = selectedPoints.some(sp => sp.strokeIdx === idx && sp.pointIdx === pIdx);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, isSel ? 14 : 10, 0, Math.PI * 2);
+        ctx.fillStyle = isSel ? '#58a6ff' : '#d29922';
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#0d1117';
+        ctx.stroke();
+      });
+    }
+  });
+
+  drawGuides();
+}
+
+function drawGuides() {
+  gctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+  gctx.lineWidth = 2;
+  gctx.setLineDash([8, 8]);
+
+  gctx.strokeStyle = 'rgba(255, 80, 80, 0.5)';
+  gctx.beginPath();
+  gctx.moveTo(0, BASELINE_Y);
+  gctx.lineTo(CANVAS_W, BASELINE_Y);
+  gctx.stroke();
+
+  gctx.strokeStyle = 'rgba(80, 150, 255, 0.4)';
+  gctx.beginPath();
+  gctx.moveTo(0, X_HEIGHT_Y);
+  gctx.lineTo(CANVAS_W, X_HEIGHT_Y);
+  gctx.stroke();
+
+  gctx.strokeStyle = 'rgba(80, 220, 120, 0.4)';
+  gctx.beginPath();
+  gctx.moveTo(0, CAP_HEIGHT_Y);
+  gctx.lineTo(CANVAS_W, CAP_HEIGHT_Y);
+  gctx.stroke();
+
+  gctx.strokeStyle = 'rgba(180, 180, 180, 0.25)';
+  gctx.beginPath();
+  gctx.moveTo(0, ASCENDER_Y);
+  gctx.lineTo(CANVAS_W, ASCENDER_Y);
+  gctx.stroke();
+  gctx.beginPath();
+  gctx.moveTo(0, DESCENDER_Y);
+  gctx.lineTo(CANVAS_W, DESCENDER_Y);
+  gctx.stroke();
+
+  const g = getGlyph(currentChar) || { width: 600, lsb: 50, rsb: 50 };
+  const totalWidth = g.width;
+  const leftX = (CANVAS_W - totalWidth) / 2;
+  const rightX = leftX + totalWidth;
+
+  gctx.strokeStyle = 'rgba(255, 200, 80, 0.4)';
+  gctx.setLineDash([4, 4]);
+  gctx.beginPath();
+  gctx.moveTo(leftX, 0);
+  gctx.lineTo(leftX, CANVAS_H);
+  gctx.stroke();
+  gctx.beginPath();
+  gctx.moveTo(rightX, 0);
+  gctx.lineTo(rightX, CANVAS_H);
+  gctx.stroke();
+
+  const lsbX = leftX + g.lsb;
+  const rsbX = rightX - g.rsb;
+  gctx.strokeStyle = 'rgba(200, 100, 255, 0.35)';
+  gctx.beginPath();
+  gctx.moveTo(lsbX, 0);
+  gctx.lineTo(lsbX, CANVAS_H);
+  gctx.stroke();
+  gctx.beginPath();
+  gctx.moveTo(rsbX, 0);
+  gctx.lineTo(rsbX, CANVAS_H);
+  gctx.stroke();
+
+  gctx.setLineDash([]);
+  gctx.font = '16px system-ui';
+  gctx.fillStyle = 'rgba(255, 80, 80, 0.8)';
+  gctx.fillText('baseline', 8, BASELINE_Y - 6);
+  gctx.fillStyle = 'rgba(80, 150, 255, 0.8)';
+  gctx.fillText('x-height', 8, X_HEIGHT_Y - 6);
+  gctx.fillStyle = 'rgba(80, 220, 120, 0.8)';
+  gctx.fillText('cap-height', 8, CAP_HEIGHT_Y - 6);
+  gctx.fillStyle = 'rgba(255, 200, 80, 0.6)';
+  gctx.fillText('width=' + totalWidth, leftX + 6, 20);
+}
+
+/* ============================================================
+   ГЕОМЕТРИЯ
+   ============================================================ */
+function getCoords(e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = CANVAS_W / rect.width;
+  const scaleY = CANVAS_H / rect.height;
+  let clientX, clientY;
+  if (e.touches) {
+    clientX = e.touches[0].clientX;
+    clientY = e.touches[0].clientY;
+  } else {
+    clientX = e.clientX;
+    clientY = e.clientY;
+  }
+  let x = (clientX - rect.left) * scaleX;
+  let y = (clientY - rect.top) * scaleY;
+  if (snapSize > 0) {
+    x = Math.round(x / snapSize) * snapSize;
+    y = Math.round(y / snapSize) * snapSize;
+  }
+  return { x, y };
+}
+
+function distToSegment(p, a, b) {
+  const dx = b.x - a.x, dy = b.y - a.y;
+  const len2 = dx * dx + dy * dy;
+  if (len2 === 0) return Math.hypot(p.x - a.x, p.y - a.y);
+  let t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / len2;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
+}
+
+function findStrokeAt(x, y) {
+  for (let i = currentStrokes.length - 1; i >= 0; i--) {
+    const s = currentStrokes[i];
+    const threshold = (s.width || brushWidth) / 2 + 8;
+    for (let j = 0; j < s.points.length - 1; j++) {
+      const d = distToSegment({ x, y }, s.points[j], s.points[j + 1]);
+      if (d < threshold) return i;
+    }
+    if (s.points.length === 1) {
+      const d = Math.hypot(x - s.points[0].x, y - s.points[0].y);
+      if (d < (s.width || brushWidth) / 2 + 8) return i;
+    }
+  }
+  return -1;
+}
+
+function findPointAt(x, y) {
+  for (let i = currentStrokes.length - 1; i >= 0; i--) {
+    const s = currentStrokes[i];
+    for (let j = 0; j < s.points.length; j++) {
+      const p = s.points[j];
+      if (Math.hypot(x - p.x, y - p.y) < 14) return { strokeIdx: i, pointIdx: j };
+    }
+  }
+  return null;
+}
+
+function simplify(points, tolerance) {
+  if (points.length < 3) return points;
+  const sqTolerance = tolerance * tolerance;
+
+  function getSqSegDist(p, p1, p2) {
+    let x = p1.x, y = p1.y;
+    let dx = p2.x - x, dy = p2.y - y;
+    if (dx !== 0 || dy !== 0) {
+      const t = ((p.x - x) * dx + (p.y - y) * dy) / (dx * dx + dy * dy);
+      if (t > 1) { x = p2.x; y = p2.y; }
+      else if (t > 0) { x += dx * t; y += dy * t; }
+    }
+    dx = p.x - x; dy = p.y - y;
+    return dx * dx + dy * dy;
+  }
+
+  function simplifyDPStep(points, first, last, sqTol, simplified) {
+    let maxSqDist = sqTol;
+    let index = -1;
+    for (let i = first + 1; i < last; i++) {
+      const sqDist = getSqSegDist(points[i], points[first], points[last]);
+      if (sqDist > maxSqDist) { index = i; maxSqDist = sqDist; }
+    }
+    if (maxSqDist > sqTol) {
+      if (index - first > 1) simplifyDPStep(points, first, index, sqTol, simplified);
+      simplified.push(points[index]);
+      if (last - index > 1) simplifyDPStep(points, index, last, sqTol, simplified);
+    }
+  }
+
+  const simplified = [points[0]];
+  simplifyDPStep(points, 0, points.length - 1, sqTolerance, simplified);
+  simplified.push(points[points.length - 1]);
+  return simplified;
+}
+
+/* ============================================================
+   РИСОВАНИЕ
+   ============================================================ */
+function startDraw(e) {
+  if (e.button === 2) return;
+  e.preventDefault();
+  isDrawing = true;
+  pushUndo();
+  const { x, y } = getCoords(e);
+  currentStroke = { points: [{ x, y }], width: brushWidth };
+  currentStrokes.push(currentStroke);
+  redraw();
+}
+
+function continueDraw(e) {
+  if (!isDrawing || !currentStroke) return;
+  e.preventDefault();
+  const { x, y } = getCoords(e);
+  const last = currentStroke.points[currentStroke.points.length - 1];
+  if (Math.hypot(x - last.x, y - last.y) < 3) return;
+  currentStroke.points.push({ x, y });
+  redraw();
+}
+
+function endDraw() {
+  if (!isDrawing) return;
+  isDrawing = false;
+  if (currentStroke && currentStroke.points.length > 30) {
+    currentStroke.points = simplify(currentStroke.points, 1.5);
+  }
+  currentStroke = null;
+  saveCurrentGlyph();
+  refreshGrid();
+  renderPreview();
+  saveToStorage();
+}
+
+/* ============================================================
+   РЕЖИМ ТОЧЕК
+   ============================================================ */
+function startPointDrag(e) {
+  if (e.button === 2) return;
+  e.preventDefault();
+  const { x, y } = getCoords(e);
+  const pt = findPointAt(x, y);
+
+  if (!pt) {
+    if (!e.shiftKey) selectedPoints = [];
+    redraw();
+    return;
+  }
+
+  if (e.shiftKey) {
+    const idx = selectedPoints.findIndex(sp => sp.strokeIdx === pt.strokeIdx && sp.pointIdx === pt.pointIdx);
+    if (idx >= 0) selectedPoints.splice(idx, 1);
+    else selectedPoints.push(pt);
+  } else {
+    const alreadySel = selectedPoints.some(sp => sp.strokeIdx === pt.strokeIdx && sp.pointIdx === pt.pointIdx);
+    if (!alreadySel) selectedPoints = [pt];
+  }
+
+  pushUndo();
+  isDraggingPoint = true;
+  const { x: cx, y: cy } = getCoords(e);
+  dragStartPositions = selectedPoints.map(sp => ({
+    strokeIdx: sp.strokeIdx,
+    pointIdx: sp.pointIdx,
+    startX: currentStrokes[sp.strokeIdx].points[sp.pointIdx].x,
+    startY: currentStrokes[sp.strokeIdx].points[sp.pointIdx].y,
+    clickX: cx, clickY: cy
+  }));
+  redraw();
+}
+
+function continuePointDrag(e) {
+  if (!isDraggingPoint) return;
+  e.preventDefault();
+  const { x, y } = getCoords(e);
+  dragStartPositions.forEach(d => {
+    const p = currentStrokes[d.strokeIdx].points[d.pointIdx];
+    p.x = d.startX + (x - d.clickX);
+    p.y = d.startY + (y - d.clickY);
+  });
+  redraw();
+}
+
+function endPointDrag() {
+  if (!isDraggingPoint) return;
+  isDraggingPoint = false;
+  saveCurrentGlyph();
+  refreshGrid();
+  renderPreview();
+  saveToStorage();
+}
+
+/* ============================================================
+   ОБРАБОТЧИКИ
+   ============================================================ */
+function onCanvasMouseDown(e) {
+  if (editMode === 'draw') startDraw(e);
+  else startPointDrag(e);
+}
+function onCanvasMouseMove(e) {
+  if (editMode === 'draw') {
+    if (isDrawing) continueDraw(e);
+    else {
+      const { x, y } = getCoords(e);
+      const idx = findStrokeAt(x, y);
+      if (idx !== hoveredStrokeIdx) {
+        hoveredStrokeIdx = idx;
+        redraw();
+      }
+    }
+  } else {
+    if (isDraggingPoint) continuePointDrag(e);
+  }
+}
+function onCanvasMouseUp(e) {
+  if (editMode === 'draw') endDraw();
+  else endPointDrag();
+}
+function onCanvasMouseLeave() {
+  if (isDrawing) endDraw();
+  if (isDraggingPoint) endPointDrag();
+  if (hoveredStrokeIdx !== -1) {
+    hoveredStrokeIdx = -1;
+    redraw();
+  }
+}
+
+canvas.addEventListener('mousedown', onCanvasMouseDown);
+canvas.addEventListener('mousemove', onCanvasMouseMove);
+canvas.addEventListener('mouseup', onCanvasMouseUp);
+canvas.addEventListener('mouseleave', onCanvasMouseLeave);
+
+canvas.addEventListener('touchstart', (e) => { e.preventDefault(); onCanvasMouseDown(e); }, { passive: false });
+canvas.addEventListener('touchmove', (e) => { e.preventDefault(); onCanvasMouseMove(e); }, { passive: false });
+canvas.addEventListener('touchend', (e) => { e.preventDefault(); onCanvasMouseUp(e); });
+canvas.addEventListener('touchcancel', onCanvasMouseUp);
+
+canvas.addEventListener('contextmenu', (e) => {
+  e.preventDefault();
+  const { x, y } = getCoords(e);
+
+  if (editMode === 'draw') {
+    const idx = findStrokeAt(x, y);
+    if (idx >= 0) {
+      pushUndo();
+      currentStrokes.splice(idx, 1);
+      redraw();
+      saveCurrentGlyph();
+      refreshGrid();
+      renderPreview();
+      saveToStorage();
+      showToast('Линия удалена');
+    }
+  } else {
+    const pt = findPointAt(x, y);
+    if (pt) {
+      pushUndo();
+      const s = currentStrokes[pt.strokeIdx];
+      if (s.points.length <= 1) {
+        currentStrokes.splice(pt.strokeIdx, 1);
+        selectedPoints = [];
+      } else {
+        s.points.splice(pt.pointIdx, 1);
+        selectedPoints = selectedPoints.filter(sp =>
+          !(sp.strokeIdx === pt.strokeIdx && sp.pointIdx === pt.pointIdx)
+        );
+      }
+      redraw();
+      saveCurrentGlyph();
+      refreshGrid();
+      renderPreview();
+      saveToStorage();
+      showToast('Точка удалена');
+    }
+  }
+});
+
+/* ============================================================
+   СМЕНА РЕЖИМА
+   ============================================================ */
+function setEditMode(mode) {
+  editMode = mode;
+  document.querySelectorAll('.mode-switch button').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === mode);
+  });
+  document.getElementById('pointTools').classList.toggle('show', mode === 'points');
+  document.getElementById('hintDraw').style.display = mode === 'draw' ? '' : 'none';
+  document.getElementById('hintPoints').style.display = mode === 'points' ? '' : 'none';
+  canvas.classList.toggle('point-mode', mode === 'points');
+  if (mode === 'draw') selectedPoints = [];
+  redraw();
+}
+
+document.getElementById('modeSwitch').addEventListener('click', (e) => {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  setEditMode(btn.dataset.mode);
+});
+
+/* ============================================================
+   ИНСТРУМЕНТЫ ТОЧЕК
+   ============================================================ */
+document.getElementById('ptDeselect').addEventListener('click', () => {
+  selectedPoints = [];
+  redraw();
+});
+
+document.getElementById('ptDelete').addEventListener('click', () => {
+  if (selectedPoints.length === 0) {
+    showToast('Сначала выделите точки', true);
+    return;
+  }
+  pushUndo();
+  const sorted = [...selectedPoints].sort((a, b) => {
+    if (a.strokeIdx !== b.strokeIdx) return b.strokeIdx - a.strokeIdx;
+    return b.pointIdx - a.pointIdx;
+  });
+  sorted.forEach(sp => {
+    const s = currentStrokes[sp.strokeIdx];
+    if (s && s.points.length > sp.pointIdx) s.points.splice(sp.pointIdx, 1);
+  });
+  currentStrokes = currentStrokes.filter(s => s.points.length > 0);
+  selectedPoints = [];
+  redraw();
+  saveCurrentGlyph();
+  refreshGrid();
+  renderPreview();
+  saveToStorage();
+  showToast('Точки удалены');
+});
+
+document.getElementById('ptMirrorH').addEventListener('click', () => mirrorGlyph('h'));
+document.getElementById('ptMirrorV').addEventListener('click', () => mirrorGlyph('v'));
+document.getElementById('ptRotate90').addEventListener('click', () => rotateGlyph90());
+
+function mirrorGlyph(axis) {
+  if (currentStrokes.length === 0) return;
+  pushUndo();
+  const cx = CANVAS_W / 2;
+  const cy = CANVAS_H / 2;
+  currentStrokes.forEach(s => {
+    s.points.forEach(p => {
+      if (axis === 'h') p.x = cx - (p.x - cx);
+      else p.y = cy - (p.y - cy);
+    });
+  });
+  selectedPoints = [];
+  redraw();
+  saveCurrentGlyph();
+  renderPreview();
+  saveToStorage();
+  showToast('Отражено');
+}
+
+function rotateGlyph90() {
+  if (currentStrokes.length === 0) return;
+  pushUndo();
+  const cx = CANVAS_W / 2;
+  const cy = CANVAS_H / 2;
+  currentStrokes.forEach(s => {
+    s.points.forEach(p => {
+      const dx = p.x - cx;
+      const dy = p.y - cy;
+      p.x = cx - dy;
+      p.y = cy + dx;
+    });
+  });
+  selectedPoints = [];
+  redraw();
+  saveCurrentGlyph();
+  renderPreview();
+  saveToStorage();
+  showToast('Повёрнуто на 90°');
+}
+
+document.getElementById('ptSmooth').addEventListener('click', () => {
+  if (selectedPoints.length === 0) {
+    showToast('Выделите точки для сглаживания', true);
+    return;
+  }
+  pushUndo();
+  const affected = new Set();
+  selectedPoints.forEach(sp => affected.add(sp.strokeIdx));
+  affected.forEach(si => {
+    const s = currentStrokes[si];
+    if (!s || s.points.length < 3) return;
+    const newPoints = s.points.map(p => ({ ...p }));
+    for (let i = 1; i < s.points.length - 1; i++) {
+      const isSelected = selectedPoints.some(sp => sp.strokeIdx === si && sp.pointIdx === i);
+      if (isSelected) {
+        newPoints[i].x = (s.points[i - 1].x + s.points[i].x * 2 + s.points[i + 1].x) / 4;
+        newPoints[i].y = (s.points[i - 1].y + s.points[i].y * 2 + s.points[i + 1].y) / 4;
+      }
+    }
+    s.points = newPoints;
+  });
+  redraw();
+  saveCurrentGlyph();
+  renderPreview();
+  saveToStorage();
+  showToast('Сглажено');
+});
+
+document.getElementById('ptThicker').addEventListener('click', () => changeStrokeWidth(+2));
+document.getElementById('ptThinner').addEventListener('click', () => changeStrokeWidth(-2));
+
+function changeStrokeWidth(delta) {
+  if (selectedPoints.length === 0 && currentStrokes.length === 0) return;
+  pushUndo();
+  const affected = selectedPoints.length > 0
+    ? new Set(selectedPoints.map(sp => sp.strokeIdx))
+    : new Set(currentStrokes.map((_, i) => i));
+  affected.forEach(si => {
+    const s = currentStrokes[si];
+    if (!s) return;
+    s.width = Math.max(2, Math.min(40, (s.width || brushWidth) + delta));
+  });
+  redraw();
+  saveCurrentGlyph();
+  renderPreview();
+  saveToStorage();
+}
+
+document.getElementById('ptCopyGlyph').addEventListener('click', () => {
+  copiedGlyph = {
+    strokes: JSON.parse(JSON.stringify(currentStrokes)),
+    width: getGlyph(currentChar)?.width || 600,
+    lsb: getGlyph(currentChar)?.lsb || 50,
+    rsb: getGlyph(currentChar)?.rsb || 50
+  };
+  showToast('Глиф скопирован в буфер');
+});
+
+document.getElementById('ptPasteGlyph').addEventListener('click', () => {
+  if (!copiedGlyph) { showToast('Буфер пуст', true); return; }
+  pushUndo();
+  currentStrokes = JSON.parse(JSON.stringify(copiedGlyph.strokes));
+  const g = ensureGlyph(currentChar);
+  g.width = copiedGlyph.width;
+  g.lsb = copiedGlyph.lsb;
+  g.rsb = copiedGlyph.rsb;
+  document.getElementById('widthRange').value = g.width;
+  document.getElementById('widthVal').textContent = g.width;
+  document.getElementById('lsbRange').value = g.lsb;
+  document.getElementById('lsbVal').textContent = g.lsb;
+  document.getElementById('rsbRange').value = g.rsb;
+  document.getElementById('rsbVal').textContent = g.rsb;
+  redraw();
+  saveCurrentGlyph();
+  refreshGrid();
+  renderPreview();
+  saveToStorage();
+  showToast('Глиф вставлен');
+});
+
+/* ============================================================
+   МЕТА-РЕДАКТОР
+   ============================================================ */
+const metaModal = document.getElementById('metaModal');
+const metaFields = ['metaFamily', 'metaStyle', 'metaVersion', 'metaDesigner',
+                    'metaLicense', 'metaURL', 'metaDescription', 'metaCopyright', 'metaTrademark'];
+
+document.getElementById('metaBtn').addEventListener('click', () => {
+  const lib = getCurrentLib();
+  if (!lib) return;
+  const meta = lib.meta || getDefaultMeta();
+  document.getElementById('metaFamily').value = meta.family || lib.name || '';
+  document.getElementById('metaStyle').value = meta.style || 'Regular';
+  document.getElementById('metaVersion').value = meta.version || '1.0';
+  document.getElementById('metaDesigner').value = meta.designer || '';
+  document.getElementById('metaLicense').value = meta.license || '';
+  document.getElementById('metaURL').value = meta.url || '';
+  document.getElementById('metaDescription').value = meta.description || '';
+  document.getElementById('metaCopyright').value = meta.copyright || '';
+  document.getElementById('metaTrademark').value = meta.trademark || '';
+  updateMetaPreview();
+  metaModal.classList.add('open');
+});
+
+function updateMetaPreview() {
+  const family = document.getElementById('metaFamily').value || '(не задано)';
+  const style = document.getElementById('metaStyle').value || 'Regular';
+  const version = document.getElementById('metaVersion').value || '1.0';
+  const designer = document.getElementById('metaDesigner').value;
+  const license = document.getElementById('metaLicense').value;
+  const url = document.getElementById('metaURL').value;
+  const copyright = document.getElementById('metaCopyright').value;
+
+  let html = `<strong>Font Name:</strong> ${family} ${style}\n`;
+  html += `<strong>Version:</strong> ${version}\n`;
+  if (designer) html += `<strong>Designer:</strong> ${designer}\n`;
+  if (license) html += `<strong>License:</strong> ${license}\n`;
+  if (url) html += `<strong>URL:</strong> ${url}\n`;
+  if (copyright) html += `<strong>Copyright:</strong> ${copyright}\n`;
+  document.getElementById('metaPreview').innerHTML = html;
+}
+
+metaFields.forEach(id => {
+  document.getElementById(id).addEventListener('input', updateMetaPreview);
+  document.getElementById(id).addEventListener('change', updateMetaPreview);
+});
+
+document.getElementById('cancelMeta').addEventListener('click', () => metaModal.classList.remove('open'));
+
+document.getElementById('resetMeta').addEventListener('click', () => {
+  metaFields.forEach(id => {
+    const el = document.getElementById(id);
+    if (el.tagName === 'SELECT') el.value = '';
+    else el.value = '';
+  });
+  updateMetaPreview();
+});
+
+document.getElementById('confirmMeta').addEventListener('click', () => {
+  const lib = getCurrentLib();
+  if (!lib) return;
+  lib.meta = {
+    family: document.getElementById('metaFamily').value.trim(),
+    style: document.getElementById('metaStyle').value.trim() || 'Regular',
+    version: document.getElementById('metaVersion').value.trim() || '1.0',
+    designer: document.getElementById('metaDesigner').value.trim(),
+    license: document.getElementById('metaLicense').value,
+    url: document.getElementById('metaURL').value.trim(),
+    description: document.getElementById('metaDescription').value.trim(),
+    copyright: document.getElementById('metaCopyright').value.trim(),
+    trademark: document.getElementById('metaTrademark').value.trim()
+  };
+  saveToStorage();
+  metaModal.classList.remove('open');
+  showToast('Метаданные сохранены');
+});
+
+metaModal.addEventListener('click', (e) => {
+  if (e.target === metaModal) metaModal.classList.remove('open');
+});
+
+/* ============================================================
+   ЭКСПОРТ В TTF
+   ============================================================ */
+function strokesToPath(strokes, glyphWidth) {
+  const leftX = (CANVAS_W - glyphWidth) / 2;
+  const path = new opentype.Path();
+
+  strokes.forEach(stroke => {
+    if (stroke.points.length === 0) return;
+    const w = stroke.width || 8;
+    const halfW = w / 2;
+
+    if (stroke.points.length === 1) {
+      const p = stroke.points[0];
+      const fx = p.x - leftX;
+      const fy = BASELINE_Y - p.y;
+      path.moveTo(fx + halfW, fy);
+      path.curveTo(fx + halfW, fy + halfW * 0.552, fx + halfW * 0.552, fy + halfW, fx, fy + halfW);
+      path.curveTo(fx - halfW * 0.552, fy + halfW, fx - halfW, fy + halfW * 0.552, fx - halfW, fy);
+      path.curveTo(fx - halfW, fy - halfW * 0.552, fx - halfW * 0.552, fy - halfW, fx, fy - halfW);
+      path.curveTo(fx + halfW * 0.552, fy - halfW, fx + halfW, fy - halfW * 0.552, fx + halfW, fy);
+      path.close();
+    } else {
+      const pts = stroke.points;
+      const leftSide = [];
+      const rightSide = [];
+
+      for (let i = 0; i < pts.length; i++) {
+        const p = pts[i];
+        let nx = 0, ny = 0;
+        if (i === 0) {
+          const dx = pts[1].x - p.x, dy = pts[1].y - p.y;
+          const len = Math.hypot(dx, dy) || 1;
+          nx = -dy / len; ny = dx / len;
+        } else if (i === pts.length - 1) {
+          const dx = p.x - pts[i - 1].x, dy = p.y - pts[i - 1].y;
+          const len = Math.hypot(dx, dy) || 1;
+          nx = -dy / len; ny = dx / len;
+        } else {
+          const dx1 = p.x - pts[i - 1].x, dy1 = p.y - pts[i - 1].y;
+          const dx2 = pts[i + 1].x - p.x, dy2 = pts[i + 1].y - p.y;
+          const l1 = Math.hypot(dx1, dy1) || 1;
+          const l2 = Math.hypot(dx2, dy2) || 1;
+          const n1x = -dy1 / l1, n1y = dx1 / l1;
+          const n2x = -dy2 / l2, n2y = dx2 / l2;
+          nx = (n1x + n2x) / 2; ny = (n1y + n2y) / 2;
+          const nl = Math.hypot(nx, ny) || 1;
+          nx /= nl; ny /= nl;
+        }
+        leftSide.push({ x: p.x + nx * halfW, y: p.y + ny * halfW });
+        rightSide.push({ x: p.x - nx * halfW, y: p.y - ny * halfW });
+      }
+
+      const toFont = (p) => ({ x: p.x - leftX, y: BASELINE_Y - p.y });
+      const first = toFont(leftSide[0]);
+      path.moveTo(first.x, first.y);
+
+      for (let i = 1; i < leftSide.length; i++) {
+        const fp = toFont(leftSide[i]);
+        path.lineTo(fp.x, fp.y);
+      }
+
+      const endCenter = toFont(pts[pts.length - 1]);
+      const endRight = toFont(rightSide[rightSide.length - 1]);
+      path.quadraticCurveTo(endCenter.x, endCenter.y, endRight.x, endRight.y);
+
+      for (let i = rightSide.length - 2; i >= 0; i--) {
+        const fp = toFont(rightSide[i]);
+        path.lineTo(fp.x, fp.y);
+      }
+
+      const startCenter = toFont(pts[0]);
+      path.quadraticCurveTo(startCenter.x, startCenter.y, first.x, first.y);
+      path.close();
+    }
+  });
+
+  return path;
+}
+
+function buildFont() {
+  const lib = getCurrentLib();
+  if (!lib) return null;
+
+  const notdefPath = new opentype.Path();
+  notdefPath.moveTo(50, 0);
+  notdefPath.lineTo(50, 700);
+  notdefPath.lineTo(550, 700);
+  notdefPath.lineTo(550, 0);
+  notdefPath.close();
+
+  const notdefGlyph = new opentype.Glyph({
+    name: '.notdef', unicode: 0, advanceWidth: 600, path: notdefPath
+  });
+
+  const glyphsList = [notdefGlyph];
+  const drawnChars = Object.keys(lib.glyphs)
+    .filter(ch => lib.glyphs[ch].strokes.length > 0)
+    .sort((a, b) => a.codePointAt(0) - b.codePointAt(0));
+
+  drawnChars.forEach(ch => {
+    const g = lib.glyphs[ch];
+    const path = strokesToPath(g.strokes, g.width);
+    const codepoint = ch.codePointAt(0);
+    if (!codepoint) return;
+    const glyph = new opentype.Glyph({
+      name: 'uni' + codepoint.toString(16).toUpperCase().padStart(4, '0'),
+      unicode: codepoint,
+      advanceWidth: g.width,
+      path: path
+    });
+    glyphsList.push(glyph);
+  });
+
+  const meta = lib.meta || getDefaultMeta();
+  const familyName = (meta.family || lib.name || 'MyCustomFont').replace(/[^\x00-\x7F]/g, '') || 'MyCustomFont';
+  const styleName = (meta.style || 'Regular').replace(/[^\x00-\x7F]/g, '') || 'Regular';
+
+  const font = new opentype.Font({
+    familyName, styleName,
+    unitsPerEm: UPM,
+    ascender: BASELINE_Y - ASCENDER_Y,
+    descender: -(DESCENDER_Y - BASELINE_Y),
+    glyphs: glyphsList
+  });
+
+  try {
+    if (meta.designer) font.names.designer = { en: meta.designer };
+    if (meta.description) font.names.description = { en: meta.description };
+    if (meta.url) font.names.designerURL = { en: meta.url };
+    if (meta.copyright) font.names.copyright = { en: meta.copyright };
+    if (meta.trademark) font.names.trademark = { en: meta.trademark };
+    if (meta.version) font.names.version = { en: meta.version };
+    if (meta.license) font.names.license = { en: meta.license };
+    if (meta.license) font.names.licenseURL = { en: getLicenseURL(meta.license) };
+  } catch (e) {
+    console.warn('meta warn:', e);
+  }
+
+  return font;
+}
+
+function getLicenseURL(lic) {
+  switch (lic) {
+    case 'OFL': return 'https://scripts.sil.org/OFL';
+    case 'CC0': return 'https://creativecommons.org/publicdomain/zero/1.0/';
+    case 'CC-BY': return 'https://creativecommons.org/licenses/by/4.0/';
+    case 'MIT': return 'https://opensource.org/licenses/MIT';
+    default: return '';
+  }
+}
+
+async function downloadFont() {
+  saveCurrentGlyph();
+  const lib = getCurrentLib();
+  if (!lib) return;
+  const drawnChars = Object.keys(lib.glyphs).filter(ch => lib.glyphs[ch].strokes.length > 0);
+  if (drawnChars.length === 0) {
+    showToast('Сначала нарисуйте хотя бы один символ', true);
+    return;
+  }
+
+  document.getElementById('loadingOverlay').classList.add('show');
+  try {
+    await new Promise(r => setTimeout(r, 50));
+    const font = buildFont();
+    if (!font) throw new Error('Не удалось собрать шрифт');
+    const buffer = font.toArrayBuffer();
+    const blob = new Blob([buffer], { type: 'font/ttf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const meta = lib.meta || {};
+    const fname = (meta.family || lib.name || 'MyCustomFont').replace(/[^\wА-Яа-я_-]/g, '_');
+    a.download = fname + '.ttf';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('TTF сохранён! Символов: ' + drawnChars.length);
+  } catch (err) {
+    console.error(err);
+    showToast('Ошибка: ' + err.message, true);
+  } finally {
+    document.getElementById('loadingOverlay').classList.remove('show');
+  }
+}
+
+/* ============================================================
+   ПРЕДПРОСМОТР
+   ============================================================ */
+function renderPreview() {
+  const previewBox = document.getElementById('previewBox');
+  const text = previewBox.innerText || '';
+  previewBox.innerHTML = '';
+  const lib = getCurrentLib();
+  if (!lib) return;
+
+  const drawnChars = Object.keys(lib.glyphs).filter(c => lib.glyphs[c].strokes.length > 0);
+  if (drawnChars.length === 0) {
+    previewBox.textContent = text;
+    return;
+  }
+
+  for (const ch of text) {
+    const g = lib.glyphs[ch];
+    if (g && g.strokes.length > 0) {
+      const span = document.createElement('span');
+      span.style.display = 'inline-block';
+      span.style.verticalAlign = 'baseline';
+      span.style.width = (g.width / UPM * 2.4) + 'rem';
+      span.style.height = '2.4rem';
+      span.style.position = 'relative';
+
+      const c = document.createElement('canvas');
+      c.width = CANVAS_W;
+      c.height = CANVAS_H;
+      c.style.width = '100%';
+      c.style.height = '100%';
+      const cctx = c.getContext('2d');
+      cctx.strokeStyle = '#e6edf3';
+      cctx.lineCap = 'round';
+      cctx.lineJoin = 'round';
+
+      g.strokes.forEach(s => {
+        const w = s.width || brushWidth;
+        if (s.points.length === 1) {
+          cctx.beginPath();
+          cctx.arc(s.points[0].x, s.points[0].y, w / 2, 0, Math.PI * 2);
+          cctx.fillStyle = '#e6edf3';
+          cctx.fill();
+        } else {
+          cctx.beginPath();
+          cctx.lineWidth = w;
+          cctx.moveTo(s.points[0].x, s.points[0].y);
+          for (let i = 1; i < s.points.length; i++) {
+            cctx.lineTo(s.points[i].x, s.points[i].y);
+          }
+          cctx.stroke();
+        }
+      });
+      span.appendChild(c);
+      previewBox.appendChild(span);
+    } else if (ch === '\n') {
+      previewBox.appendChild(document.createElement('br'));
+    } else if (ch === ' ') {
+      const sp = document.createElement('span');
+      sp.innerHTML = '&nbsp;';
+      previewBox.appendChild(sp);
+    } else {
+      const sp = document.createElement('span');
+      sp.textContent = ch;
+      sp.style.fontFamily = "'Noto Sans JP', system-ui";
+      sp.style.fontSize = '2rem';
+      previewBox.appendChild(sp);
+    }
+  }
+}
+
+/* ============================================================
+   UI СОБЫТИЯ
+   ============================================================ */
+document.getElementById('widthRange').addEventListener('input', (e) => {
+  const v = +e.target.value;
+  document.getElementById('widthVal').textContent = v;
+  const g = ensureGlyph(currentChar);
+  if (g) g.width = v;
+  redraw();
+  saveToStorage();
+});
+document.getElementById('lsbRange').addEventListener('input', (e) => {
+  const v = +e.target.value;
+  document.getElementById('lsbVal').textContent = v;
+  const g = ensureGlyph(currentChar);
+  if (g) g.lsb = v;
+  redraw();
+  saveToStorage();
+});
+document.getElementById('rsbRange').addEventListener('input', (e) => {
+  const v = +e.target.value;
+  document.getElementById('rsbVal').textContent = v;
+  const g = ensureGlyph(currentChar);
+  if (g) g.rsb = v;
+  redraw();
+  saveToStorage();
+});
+document.getElementById('brushRange').addEventListener('input', (e) => {
+  brushWidth = +e.target.value;
+  document.getElementById('brushVal').textContent = brushWidth;
+  saveToStorage();
+});
+document.getElementById('snapRange').addEventListener('input', (e) => {
+  snapSize = +e.target.value;
+  document.getElementById('snapVal').textContent = snapSize === 0 ? 'выкл' : snapSize + 'px';
+  saveToStorage();
+});
+
+document.getElementById('searchBox').addEventListener('input', () => {
+  buildGlyphGrid(currentTab);
+});
+
+document.getElementById('clearBtn').addEventListener('click', () => {
+  if (currentStrokes.length === 0) return;
+  pushUndo();
+  currentStrokes = [];
+  selectedPoints = [];
+  saveCurrentGlyph();
+  redraw();
+  refreshGrid();
+  renderPreview();
+  saveToStorage();
+  showToast('Глиф очищен');
+});
+
+document.getElementById('undoBtn').addEventListener('click', undo);
+document.getElementById('redoBtn').addEventListener('click', redo);
+
+document.getElementById('clearAllBtn').addEventListener('click', () => {
+  if (!confirm('Удалить все нарисованные глифы в текущей библиотеке?')) return;
+  const lib = getCurrentLib();
+  if (!lib) return;
+  lib.glyphs = {};
+  currentStrokes = [];
+  undoStack = [];
+  redoStack = [];
+  selectedPoints = [];
+  loadGlyph(currentChar);
+  redraw();
+  refreshGrid();
+  renderPreview();
+  saveToStorage();
+  showToast('Библиотека очищена');
+});
+
+document.getElementById('downloadBtn').addEventListener('click', downloadFont);
+
+/* Режим удаления */
+document.getElementById('removeModeBtn').addEventListener('click', () => {
+  removeMode = !removeMode;
+  markedForRemoval.clear();
+  const btn = document.getElementById('removeModeBtn');
+  btn.classList.toggle('active', removeMode);
+  btn.textContent = removeMode ? '✕ Выход' : '✕ Удалить';
+  document.getElementById('removeActions').classList.toggle('show', removeMode);
+  document.getElementById('selectedCount').textContent = 'Выбрано: 0';
+  buildGlyphGrid(currentTab);
+  if (removeMode) {
+    showToast('Режим удаления: кликайте по символам, чтобы пометить');
+  }
+});
+
+document.getElementById('cancelRemoveBtn').addEventListener('click', () => {
+  removeMode = false;
+  markedForRemoval.clear();
+  const btn = document.getElementById('removeModeBtn');
+  btn.classList.remove('active');
+  btn.textContent = '✕ Удалить';
+  document.getElementById('removeActions').classList.remove('show');
+  buildGlyphGrid(currentTab);
+});
+
+document.getElementById('confirmRemoveBtn').addEventListener('click', () => {
+  if (markedForRemoval.size === 0) {
+    showToast('Ничего не помечено', true);
+    return;
+  }
+  if (!confirm('Удалить ' + markedForRemoval.size + ' символ(ов) из библиотеки?')) return;
+
+  const lib = getCurrentLib();
+  if (!lib) return;
+
+  markedForRemoval.forEach(ch => {
+    const ci = lib.customChars.indexOf(ch);
+    if (ci >= 0) lib.customChars.splice(ci, 1);
+
+    const inBuiltin = Object.values(BUILTIN_SETS).some(set => set.includes(ch));
+    if (!inBuiltin) {
+      const i = lib.chars.indexOf(ch);
+      if (i >= 0) lib.chars.splice(i, 1);
+    }
+
+    delete lib.glyphs[ch];
+  });
+
+  if (markedForRemoval.has(currentChar)) {
+    const fallback = lib.customChars[0] || lib.chars[0] || 'A';
+    currentChar = fallback;
+    document.getElementById('currentGlyphDisplay').textContent = fallback;
+    loadGlyph(fallback);
+  }
+
+  const count = markedForRemoval.size;
+  markedForRemoval.clear();
+  removeMode = false;
+  const btn = document.getElementById('removeModeBtn');
+  btn.classList.remove('active');
+  btn.textContent = '✕ Удалить';
+  document.getElementById('removeActions').classList.remove('show');
+
+  refreshGrid();
+  redraw();
+  renderPreview();
+  saveToStorage();
+  showToast('Удалено символов: ' + count);
+});
+
+/* Клавиатура */
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+    e.preventDefault();
+    undo();
+  } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+    e.preventDefault();
+    redo();
+  } else if (e.key === ' ' && e.target.tagName !== 'BUTTON') {
+    e.preventDefault();
+    setEditMode(editMode === 'draw' ? 'points' : 'draw');
+  } else if ((e.ctrlKey || e.metaKey) && e.key === 'c' && editMode === 'points') {
+    copiedGlyph = {
+      strokes: JSON.parse(JSON.stringify(currentStrokes)),
+      width: getGlyph(currentChar)?.width || 600,
+      lsb: getGlyph(currentChar)?.lsb || 50,
+      rsb: getGlyph(currentChar)?.rsb || 50
+    };
+    showToast('Глиф скопирован');
+  } else if ((e.ctrlKey || e.metaKey) && e.key === 'v' && editMode === 'points') {
+    if (copiedGlyph) {
+      pushUndo();
+      currentStrokes = JSON.parse(JSON.stringify(copiedGlyph.strokes));
+      redraw();
+      saveCurrentGlyph();
+      refreshGrid();
+      renderPreview();
+      saveToStorage();
+      showToast('Глиф вставлен');
+    }
+  }
+});
+
+document.querySelectorAll('[data-quick]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const ch = btn.dataset.quick;
+    const lib = getCurrentLib();
+    if (!lib) return;
+    if (!lib.chars.includes(ch)) lib.chars.push(ch);
+    if (!lib.customChars.includes(ch)) lib.customChars.push(ch);
+    currentTab = 'Свои';
+    selectGlyph(ch);
+    refreshGrid();
+    saveToStorage();
+  });
+});
+
+/* ============================================================
+   МОДАЛКА: добавить символы
+   ============================================================ */
+const addModal = document.getElementById('addModal');
+document.getElementById('addCustomBtn').addEventListener('click', () => {
+  document.getElementById('customCharsInput').value = '';
+  addModal.classList.add('open');
+  setTimeout(() => document.getElementById('customCharsInput').focus(), 50);
+});
+document.getElementById('cancelAddBtn').addEventListener('click', () => addModal.classList.remove('open'));
+document.getElementById('confirmAddBtn').addEventListener('click', () => {
+  const raw = document.getElementById('customCharsInput').value || '';
+  const lib = getCurrentLib();
+  if (!lib) return;
+  const chars = Array.from(raw).filter(c => c.trim().length > 0 || c === ' ');
+  let added = 0;
+  chars.forEach(ch => {
+    if (!lib.chars.includes(ch)) { lib.chars.push(ch); added++; }
+    if (!lib.customChars.includes(ch)) lib.customChars.push(ch);
+  });
+  addModal.classList.remove('open');
+  currentTab = 'Свои';
+  if (chars.length > 0) selectGlyph(chars[0]);
+  refreshGrid();
+  saveToStorage();
+  showToast('Добавлено символов: ' + added);
+});
+addModal.addEventListener('click', (e) => {
+  if (e.target === addModal) addModal.classList.remove('open');
+});
+
+/* ============================================================
+   МОДАЛКА: новая / переименование
+   ============================================================ */
+const newLibModal = document.getElementById('newLibModal');
+let newLibMode = 'create';
+
+document.getElementById('newLibBtn').addEventListener('click', () => {
+  newLibMode = 'create';
+  document.getElementById('newLibTitle').textContent = 'Новая библиотека';
+  document.getElementById('newLibDesc').textContent = 'Создайте пустую библиотеку символов.';
+  document.getElementById('newLibName').value = '';
+  document.getElementById('newLibChars').value = '';
+  document.getElementById('newLibCharsRow').style.display = '';
+  newLibModal.classList.add('open');
+  setTimeout(() => document.getElementById('newLibName').focus(), 50);
+});
+
+document.getElementById('renameLibBtn').addEventListener('click', () => {
+  newLibMode = 'rename';
+  document.getElementById('newLibTitle').textContent = 'Переименовать библиотеку';
+  document.getElementById('newLibDesc').textContent = 'Введите новое название.';
+  document.getElementById('newLibName').value = currentLibName;
+  document.getElementById('newLibCharsRow').style.display = 'none';
+  newLibModal.classList.add('open');
+  setTimeout(() => document.getElementById('newLibName').select(), 50);
+});
+
+document.getElementById('cancelNewLib').addEventListener('click', () => newLibModal.classList.remove('open'));
+
+document.getElementById('confirmNewLib').addEventListener('click', () => {
+  const name = (document.getElementById('newLibName').value || '').trim();
+  if (!name) { showToast('Введите название', true); return; }
+
+  if (newLibMode === 'create') {
+    if (libraries[name]) { showToast('Такое имя уже есть', true); return; }
+    const raw = document.getElementById('newLibChars').value || '';
+    const custom = Array.from(raw).filter(c => c.trim().length > 0 || c === ' ');
+    const allChars = [];
+    Object.values(BUILTIN_SETS).forEach(set => {
+      set.forEach(ch => { if (!allChars.includes(ch)) allChars.push(ch); });
+    });
+    custom.forEach(ch => { if (!allChars.includes(ch)) allChars.push(ch); });
+    libraries[name] = {
+      name, chars: allChars, customChars: custom,
+      glyphs: {}, meta: getDefaultMeta()
+    };
+    currentLibName = name;
+    currentTab = custom.length > 0 ? 'Свои' : 'Латиница A-Z';
+    currentChar = custom.length > 0 ? custom[0] : 'A';
+    loadGlyph(currentChar);
+    document.getElementById('currentGlyphDisplay').textContent = currentChar;
+    refreshLibrarySelect();
+    refreshGrid();
+    redraw();
+    renderPreview();
+    saveToStorage();
+    newLibModal.classList.remove('open');
+    showToast('Библиотека «' + name + '» создана');
+  } else {
+    if (name === currentLibName) { newLibModal.classList.remove('open'); return; }
+    if (libraries[name]) { showToast('Такое имя уже занято', true); return; }
+    const lib = libraries[currentLibName];
+    delete libraries[currentLibName];
+    lib.name = name;
+    libraries[name] = lib;
+    currentLibName = name;
+    refreshLibrarySelect();
+    refreshGrid();
+    saveToStorage();
+    newLibModal.classList.remove('open');
+    showToast('Переименовано в «' + name + '»');
+  }
+});
+newLibModal.addEventListener('click', (e) => {
+  if (e.target === newLibModal) newLibModal.classList.remove('open');
+});
+
+/* ============================================================
+   ДУБЛИРОВАНИЕ
+   ============================================================ */
+document.getElementById('dupLibBtn').addEventListener('click', () => {
+  const lib = getCurrentLib();
+  if (!lib) return;
+  let name = lib.name + ' (копия)';
+  let i = 2;
+  while (libraries[name]) name = lib.name + ' (копия ' + (i++) + ')';
+  libraries[name] = JSON.parse(JSON.stringify(lib));
+  libraries[name].name = name;
+  currentLibName = name;
+  refreshLibrarySelect();
+  refreshGrid();
+  saveToStorage();
+  showToast('Создана копия: «' + name + '»');
+});
+
+/* ============================================================
+   УДАЛЕНИЕ БИБЛИОТЕКИ
+   ============================================================ */
+document.getElementById('deleteLibBtn').addEventListener('click', () => {
+  const names = Object.keys(libraries);
+  if (names.length <= 1) { showToast('Нельзя удалить последнюю', true); return; }
+  if (!confirm('Удалить библиотеку «' + currentLibName + '»?')) return;
+  delete libraries[currentLibName];
+  currentLibName = Object.keys(libraries)[0];
+  currentChar = getCurrentLib().chars[0] || 'A';
+  currentTab = 'Латиница A-Z';
+  refreshLibrarySelect();
+  loadGlyph(currentChar);
+  document.getElementById('currentGlyphDisplay').textContent = currentChar;
+  refreshGrid();
+  redraw();
+  renderPreview();
+  saveToStorage();
+  showToast('Библиотека удалена');
+});
+
+/* ============================================================
+   СЛИЯНИЕ
+   ============================================================ */
+const mergeModal = document.getElementById('mergeModal');
+document.getElementById('mergeLibBtn').addEventListener('click', () => {
+  const sel = document.getElementById('mergeSource');
+  sel.innerHTML = '';
+  Object.keys(libraries).forEach(name => {
+    if (name === currentLibName) return;
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    sel.appendChild(opt);
+  });
+  if (sel.options.length === 0) {
+    showToast('Нет других библиотек для слияния', true);
+    return;
+  }
+  mergeModal.classList.add('open');
+});
+document.getElementById('cancelMerge').addEventListener('click', () => mergeModal.classList.remove('open'));
+document.getElementById('confirmMerge').addEventListener('click', () => {
+  const src = document.getElementById('mergeSource').value;
+  const copyGlyphs = document.getElementById('mergeGlyphs').checked;
+  const overwrite = document.getElementById('mergeOverwrite').checked;
+  if (!libraries[src]) return;
+  const sourceLib = libraries[src];
+  const targetLib = getCurrentLib();
+  let addedChars = 0, addedGlyphs = 0;
+
+  sourceLib.chars.forEach(ch => {
+    if (!targetLib.chars.includes(ch)) { targetLib.chars.push(ch); addedChars++; }
+    if (sourceLib.customChars.includes(ch) && !targetLib.customChars.includes(ch)) {
+      targetLib.customChars.push(ch);
+    }
+  });
+
+  if (copyGlyphs) {
+    Object.keys(sourceLib.glyphs).forEach(ch => {
+      const srcGlyph = sourceLib.glyphs[ch];
+      if (srcGlyph.strokes.length === 0) return;
+      const dstGlyph = targetLib.glyphs[ch];
+      if (!dstGlyph || dstGlyph.strokes.length === 0 || overwrite) {
+        targetLib.glyphs[ch] = JSON.parse(JSON.stringify(srcGlyph));
+        addedGlyphs++;
+      }
+    });
+  }
+
+  mergeModal.classList.remove('open');
+  refreshGrid();
+  renderPreview();
+  saveToStorage();
+  showToast('Слияние: +' + addedChars + ' символов, +' + addedGlyphs + ' глифов');
+});
+mergeModal.addEventListener('click', (e) => {
+  if (e.target === mergeModal) mergeModal.classList.remove('open');
+});
+
+/* ============================================================
+   ИМПОРТ
+   ============================================================ */
+const importModal = document.getElementById('importModal');
+const importJson = document.getElementById('importJson');
+const importFile = document.getElementById('importFile');
+
+document.getElementById('importLibBtn').addEventListener('click', () => {
+  importJson.value = '';
+  importFile.value = '';
+  importModal.classList.add('open');
+});
+document.getElementById('cancelImport').addEventListener('click', () => importModal.classList.remove('open'));
+importFile.addEventListener('change', (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => { importJson.value = ev.target.result; };
+  reader.readAsText(f);
+});
+document.getElementById('confirmImport').addEventListener('click', () => {
+  const raw = importJson.value.trim();
+  if (!raw) { showToast('Вставьте JSON', true); return; }
+  try {
+    const data = JSON.parse(raw);
+    if (!data.name || !Array.isArray(data.chars)) throw new Error('Нужны name и chars');
+    let name = data.name;
+    let suffix = 1;
+    while (libraries[name]) name = data.name + ' (' + (++suffix) + ')';
+    libraries[name] = {
+      name,
+      chars: data.chars.slice(),
+      customChars: data.customChars ? data.customChars.slice() : [],
+      glyphs: data.glyphs || {},
+      meta: data.meta || getDefaultMeta()
+    };
+    currentLibName = name;
+    currentTab = 'Латиница A-Z';
+    currentChar = data.chars[0] || 'A';
+    refreshLibrarySelect();
+    loadGlyph(currentChar);
+    document.getElementById('currentGlyphDisplay').textContent = currentChar;
+    refreshGrid();
+    redraw();
+    renderPreview();
+    saveToStorage();
+    importModal.classList.remove('open');
+    showToast('Импортировано: ' + data.chars.length + ' символов');
+  } catch (err) {
+    showToast('Ошибка: ' + err.message, true);
+  }
+});
+importModal.addEventListener('click', (e) => {
+  if (e.target === importModal) importModal.classList.remove('open');
+});
+
+/* ============================================================
+   ЭКСПОРТ
+   ============================================================ */
+document.getElementById('exportLibBtn').addEventListener('click', () => {
+  const lib = getCurrentLib();
+  if (!lib) return;
+  const data = {
+    name: lib.name, chars: lib.chars, customChars: lib.customChars,
+    glyphs: lib.glyphs, meta: lib.meta
+  };
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = (lib.name || 'library').replace(/[^\wА-Яа-я_-]/g, '_') + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('Библиотека экспортирована');
+});
+
+/* ============================================================
+   СМЕНА БИБЛИОТЕКИ
+   ============================================================ */
+document.getElementById('librarySelect').addEventListener('change', (e) => {
+  saveCurrentGlyph();
+  currentLibName = e.target.value;
+  const lib = getCurrentLib();
+  if (!lib) return;
+  if (!lib.chars.includes(currentChar)) currentChar = lib.chars[0] || 'A';
+  currentTab = 'Латиница A-Z';
+  if (!BUILTIN_SETS[currentTab].some(c => lib.chars.includes(c))) currentTab = 'Свои';
+  removeMode = false;
+  markedForRemoval.clear();
+  loadGlyph(currentChar);
+  document.getElementById('currentGlyphDisplay').textContent = currentChar;
+  refreshGrid();
+  redraw();
+  renderPreview();
+  saveToStorage();
+});
+
+/* ============================================================
+   ПРЕВЬЮ
+   ============================================================ */
+let previewTimeout;
+document.getElementById('previewBox').addEventListener('input', () => {
+  clearTimeout(previewTimeout);
+  previewTimeout = setTimeout(renderPreview, 300);
+});
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+let toastTimeout;
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.toggle('error', isError);
+  t.classList.add('show');
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+/* ============================================================
+   СТАРТ
+   ============================================================ */
+function init() {
+  const restored = loadFromStorage();
+  if (!restored) {
+    libraries = { 'Основная': buildDefaultLibrary() };
+    currentLibName = 'Основная';
+  }
+  refreshLibrarySelect();
+  loadGlyph(currentChar);
+  document.getElementById('currentGlyphDisplay').textContent = currentChar;
+  buildTabs();
+  buildGlyphGrid(currentTab);
+  updateProgress();
+  redraw();
+  renderPreview();
+
+  document.getElementById('brushRange').value = brushWidth;
+  document.getElementById('brushVal').textContent = brushWidth;
+  document.getElementById('snapRange').value = snapSize;
+  document.getElementById('snapVal').textContent = snapSize === 0 ? 'выкл' : snapSize + 'px';
+}
+
+init();
+</script>
+</body>
+</html>
