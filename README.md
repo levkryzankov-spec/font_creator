@@ -1,14 +1,14 @@
-# ✒️ font_creator
+<h1 align="center">✒️ font_creator</h1>
 
-![TTF](https://img.shields.io/badge/формат-TTF-238636?style=for-the-badge)
-![HTML](https://img.shields.io/badge/HTML-один_файл-e34c26?style=for-the-badge&logo=html5&logoColor=white)
-![JavaScript](https://img.shields.io/badge/JavaScript-ES6-f7df1e?style=for-the-badge&logo=javascript&logoColor=black)
-![License](https://img.shields.io/badge/лицензия-MIT-8957e5?style=for-the-badge)
-![No Build](https://img.shields.io/badge/без_сборки-✓-58a6ff?style=for-the-badge)
+<p align="center">
+  <b>Векторный конструктор шрифтов прямо в браузере.</b><br>
+  Рисуй буквы, настраивай метрики, экспортируй настоящий <code>.ttf</code> —<br>
+  без серверов, аккаунтов и платных подписок.
+</p>
 
-**Векторный конструктор шрифтов прямо в браузере.** Рисуй буквы, настраивай метрики, экспортируй настоящий `.ttf` — без серверов, аккаунтов и платных подписок.
-
-🔗 **Открыть сайт:** [levkryzankov-spec.github.io/font_creator](https://levkryzankov-spec.github.io/font_creator/)
+<p align="center">
+  🔗 <b><a href="https://levkryzankov-spec.github.io/font_creator/">Открыть сайт</a></b>
+</p>
 
 ---
 
@@ -112,4 +112,6 @@
 
 ---
 
-**Сделано с ♥ для всех, кто хочет свой шрифт без сложных программ.**
+<p align="center">
+  <b>Сделано с ♥ для всех, кто хочет свой шрифт без сложных программ.</b>
+</p>
